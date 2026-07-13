@@ -770,9 +770,9 @@ const handleReviewConfirm = (updatedExamData: ExamData) => {
     setExportingExamId(exam.id);
     try {
       if (withAnswers) {
-        await exportExamWithAnswers(exam, user.name, 'LMS Thầy Phúc');
+        await exportExamWithAnswers(exam, user.name, 'LMS Thầy Toàn');
       } else {
-        await exportExamOnly(exam, user.name, 'LMS Thầy Phúc');
+        await exportExamOnly(exam, user.name, 'LMS Thầy Toàn');
       }
     } catch (err) {
       alert('❌ Lỗi xuất Word: ' + (err as Error).message + '\n\nHãy chắc chắn đã cài: npm install docx');
@@ -792,7 +792,7 @@ const handleReviewConfirm = (updatedExamData: ExamData) => {
           <div className="flex items-center gap-4">
             <div className="text-3xl">👨‍🏫</div>
             <div>
-              <h1 className="text-xl font-bold">LMS Thầy Phúc</h1>
+              <h1 className="text-xl font-bold">LMS Thầy Toàn</h1>
               <p className="text-teal-100 text-sm">{user.name}</p>
             </div>
           </div>
