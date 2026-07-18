@@ -147,23 +147,35 @@ ${typeInstruction}
 
 Trả về JSON array: [{ type, text, options?, correctAnswer, solution?, tfStatements?, tfAnswers? }, ...]`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+ // Lưu ý: API Key phải được bảo mật ở Backend (Vercel API/Next.js Route)
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY; 
+
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
+      systemInstruction: {
+        parts: [{ text: systemPrompt }]
+      },
+      contents: [{
+        role: "user",
+        parts: [{ text: userPrompt }]
+      }],
+      generationConfig: {
+        // Thuộc tính này cực kỳ hữu ích: Ép Gemini phải trả về chuỗi JSON hợp lệ
+        responseMimeType: "application/json", 
+      }
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`AI API error: ${response.status}`);
+    const errorData = await response.json();
+    throw new Error(`Gemini API error: ${response.status} - ${errorData.error?.message}`);
   }
 
   const data = await response.json();
-  const rawText = data.content?.find((c: any) => c.type === 'text')?.text || '[]';
+  // Cách lấy text từ cấu trúc JSON của Gemini
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
 
   // Parse JSON — strip markdown code fences nếu có
   const cleaned = rawText
