@@ -29,11 +29,11 @@ import {
   StudentAssessmentResult,
 } from '../types';
 
-─── Helpers ──────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────
 
 const genId = () => Math.random().toString(36).slice(2, 10);
 
-─── CRUD Knowledge Units ─────────────────────────────────────────────────
+// ─── CRUD Knowledge Units ─────────────────────────────────────────────────
 
 export const createKnowledgeUnit = async (
   data: Omit<KnowledgeUnit, 'id' | 'createdAt' | 'updatedAt'>
@@ -147,14 +147,14 @@ ${typeInstruction}
 
 Trả về JSON array: [{ "type": "...", "text": "...", "options": [...], "correctAnswer": "...", "solution": "...", "tfStatements": {...}, "tfAnswers": {...} }]`;
 
-  // Sử dụng import.meta.env cho Vite thay vì process.env
   const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
 
   if (!GEMINI_API_KEY) {
     throw new Error('Chưa tìm thấy VITE_GEMINI_API_KEY. Vui lòng kiểm tra file .env');
   }
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+  // Đã cập nhật thành gemini-3.5-flash
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -269,7 +269,8 @@ Hãy trả về JSON theo cấu trúc:
     throw new Error('Chưa tìm thấy VITE_GEMINI_API_KEY. Vui lòng kiểm tra file .env');
   }
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+  // Đã cập nhật thành gemini-3.5-flash
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
