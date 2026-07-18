@@ -19,10 +19,7 @@ import {
 
 import {
   KnowledgeUnit,
-  LearningObjective,
-  Question,
   QuestionType,
-  QuestionOption,
   Submission,
   Exam,
   ClassAssessmentReport,
