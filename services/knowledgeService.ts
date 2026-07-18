@@ -19,7 +19,10 @@ import {
 
 import {
   KnowledgeUnit,
+  LearningObjective,
+  Question,
   QuestionType,
+  QuestionOption,
   Submission,
   Exam,
   ClassAssessmentReport,
@@ -98,7 +101,7 @@ export interface AIGeneratedQuestion {
 }
 
 /**
- * Gọi Gemini API để tạo câu hỏi từ nội dung kiến thức
+ * Gọi Anthropic API để tạo câu hỏi từ nội dung kiến thức
  */
 export const generateQuestionsWithAI = async (
   req: AIQuestionRequest
@@ -142,45 +145,38 @@ ${additionalInstructions ? `Yêu cầu thêm: ${additionalInstructions}` : ''}
 
 ${typeInstruction}
 
-Trả về JSON array: [{ "type": "...", "text": "...", "options": [...], "correctAnswer": "...", "solution": "...", "tfStatements": {...}, "tfAnswers": {...} }]`;
+Trả về JSON array: [{ type, text, options?, correctAnswer, solution?, tfStatements?, tfAnswers? }, ...]`;
 
-  const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
-
-  if (!GEMINI_API_KEY) {
-    throw new Error('Chưa tìm thấy VITE_GEMINI_API_KEY. Vui lòng kiểm tra file .env');
-  }
-
-  // Đã cập nhật thành gemini-3.5-flash
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      systemInstruction: {
-        parts: [{ text: systemPrompt }]
-      },
-      contents: [{
-        role: "user",
-        parts: [{ text: userPrompt }]
-      }],
-      generationConfig: {
-        responseMimeType: "application/json", 
-      }
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
     }),
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Gemini API error: ${response.status} - ${errorData.error?.message}`);
+    throw new Error(`AI API error: ${response.status}`);
   }
 
   const data = await response.json();
-  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+  const rawText = data.content?.find((c: any) => c.type === 'text')?.text || '[]';
+
+  // Parse JSON — strip markdown code fences nếu có
+  const cleaned = rawText
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
 
   try {
-    const parsed = JSON.parse(rawText);
+    const parsed = JSON.parse(cleaned);
     return Array.isArray(parsed) ? parsed : [parsed];
   } catch {
-    throw new Error('AI trả về định dạng JSON không hợp lệ. Vui lòng thử lại.');
+    throw new Error('AI trả về định dạng không hợp lệ. Vui lòng thử lại.');
   }
 };
 
@@ -228,7 +224,8 @@ export const generateAIAssessment = async (
 Luôn trả về JSON hợp lệ, KHÔNG có markdown, KHÔNG có giải thích ngoài JSON.
 Nhận xét phải cụ thể, tích cực và có tính xây dựng theo phong cách giáo dục Việt Nam.`;
 
-  const userPrompt = `Bài kiểm tra: ${exam.title}
+  const userPrompt = `
+Bài kiểm tra: ${exam.title}
 Đơn vị kiến thức: ${knowledgeUnit.title}
 Môn: ${knowledgeUnit.subject} | Lớp: ${knowledgeUnit.grade}
 
@@ -260,43 +257,35 @@ Hãy trả về JSON theo cấu trúc:
   ]
 }`;
 
-  const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
-
-  if (!GEMINI_API_KEY) {
-    throw new Error('Chưa tìm thấy VITE_GEMINI_API_KEY. Vui lòng kiểm tra file .env');
-  }
-
-  // Đã cập nhật thành gemini-3.5-flash
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+  const response = await fetch('[https://api.anthropic.com/v1/messages](https://api.anthropic.com/v1/messages)', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      systemInstruction: {
-        parts: [{ text: systemPrompt }]
-      },
-      contents: [{
-        role: "user",
-        parts: [{ text: userPrompt }]
-      }],
-      generationConfig: {
-        responseMimeType: "application/json", 
-      }
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
     }),
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Gemini API error: ${response.status} - ${errorData.error?.message}`);
+    throw new Error(`AI API error: ${response.status}`);
   }
 
   const data = await response.json();
-  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+  const rawText = data.content?.find((c: any) => c.type === 'text')?.text || '{}';
+
+  const cleaned = rawText
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
 
   let aiResult: any;
   try {
-    aiResult = JSON.parse(rawText);
+    aiResult = JSON.parse(cleaned);
   } catch {
-    throw new Error('AI trả về định dạng JSON không hợp lệ. Vui lòng thử lại.');
+    throw new Error('AI trả về định dạng không hợp lệ. Vui lòng thử lại.');
   }
 
   // Ghép với dữ liệu thực tế
